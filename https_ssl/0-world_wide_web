@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2086
+
+# Function to query and display DNS record information for a given subdomain and domain
+print_subdomain_info() {
+    local sub="$1"
+    local dom="$2"
+    
+    # Query DNS using dig and extract record type ($4) and destination IP ($5) using awk
+    local dns_record
+    dns_record=$(dig +noall +answer "${sub}.${dom}" A | awk '$4 == "A" {print $4, $5}')
+    
+    if [ -n "$dns_record" ]; then
+        local rectype
+        local destination
+        rectype=$(echo "$dns_record" | awk '{print $1}')
+        destination=$(echo "$dns_record" | awk '{print $2}')
+        
+        echo "The subdomain ${sub} is a ${rectype} record and points to ${destination}"
+    fi
+}
+
+# Main execution logic
+DOMAIN="$1"
+SUBDOMAIN="$2"
+
+if [ -n "$SUBDOMAIN" ]; then
+    # If a specific subdomain is provided, display only its information
+    print_subdomain_info "$SUBDOMAIN" "$DOMAIN"
+else
+    # Otherwise, display information for www, lb-01, web-01, and web-02 in the exact specified order
+    for sub in www lb-01 web-01 web-02; do
+        print_subdomain_info "$sub" "$DOMAIN"
+    done
+fi
